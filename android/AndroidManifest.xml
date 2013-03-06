@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.royer.bangstopwatch.app.StopwatchActivity"
+            android:name="com.royer.bangstopwatch.app.StopwatchFragment"
             android:label="@string/app_name" >
         </activity>
     </application>
