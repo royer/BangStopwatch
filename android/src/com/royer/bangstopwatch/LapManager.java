@@ -42,15 +42,15 @@ public class LapManager {
 	public void appandLap(long tmCurrent) {
 		
 		long laptime = 0;
-		long abstime = tmCurrent ;
+		long abstime = tmCurrent - tmStart ;
 		
 		if (_laps.isEmpty()) {
 			
-			laptime = abstime - getTmStart();
+			laptime = abstime ;
 			
 		} else {
 			Lap lastlap = _laps.get(_laps.size()-1);
-			laptime = tmCurrent - lastlap.get_abstime();
+			laptime = abstime - lastlap.get_abstime();
 		}
 		
 		Lap newlap = new Lap(abstime, laptime);
