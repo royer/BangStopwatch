@@ -63,8 +63,6 @@ public class StopwatchFragment extends SherlockFragment {
 	
 	private Button btnStart ;
 
-	// for test laplist
-	private Button btnLap; 
 	
 	
 	private LapArrayAdapter	mLapAdapter ;
@@ -92,16 +90,6 @@ public class StopwatchFragment extends SherlockFragment {
 			}
 		});
 		
-		//// for test laplist
-		btnLap = (Button)getView().findViewById(R.id.btnLap);
-		btnLap.setOnClickListener(new View.OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				onLap();
-				
-			}
-		});
 	}
 	
 	public void InitLapList() {

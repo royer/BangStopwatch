@@ -139,14 +139,6 @@
 	        android:textSize="20sp"
 	        android:text="@string/start" />
 	    
-	    <!-- add lap button for test laplist begin -->
-	    <Button
-	        android:id="@+id/btnLap"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:textSize="20sp"
-	        android:text="Lap" />
-	    <!-- add lap button for test laplist end -->
 	    
 	</LinearLayout>
 </LinearLayout>
