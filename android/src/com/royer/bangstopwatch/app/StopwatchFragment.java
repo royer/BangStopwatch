@@ -28,6 +28,7 @@ import com.royer.bangstopwatch.adapters.LapArrayAdapter;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +39,9 @@ import android.widget.ListView;
 public class StopwatchFragment extends SherlockFragment {
 
 	public static final String TAG = "StopwatchFragment" ;
+	
+	private static final String STATE_TIMEKEEPER = 
+			"royer.bangstopwatch.stopwatch.timekeeper" ;
 	
 	
 	private int[] res_img_Digits = { 
@@ -74,9 +78,10 @@ public class StopwatchFragment extends SherlockFragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		
+		Log.d(TAG, "Enter onActivityCreated...") ;
+		
 		InitTimeDisplayView();
 		
-		_timekeeper = new Timekeeper();
 		
 		mLapList = (ListView)getView().findViewById(R.id.listLap);
 		InitLapList();
@@ -90,6 +95,17 @@ public class StopwatchFragment extends SherlockFragment {
 			}
 		});
 		
+		if (savedInstanceState != null) {
+			Log.d(TAG, "savedInstanceState " + savedInstanceState.toString());
+			_timekeeper = savedInstanceState.getParcelable(STATE_TIMEKEEPER);
+		} else {
+			Log.d(TAG,"savedInstanceState == NULL") ;
+			_timekeeper = new Timekeeper();
+		}
+		
+		printTime();
+		
+		Log.d(TAG, "Leave OnActivityCreated...");
 	}
 	
 	public void InitLapList() {
@@ -101,6 +117,51 @@ public class StopwatchFragment extends SherlockFragment {
 	}
 
 
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		
+		Log.d(TAG, "onStart()...") ;
+		if (_timekeeper.isrunning()) {
+			
+			/**
+			 * because in onStop() we stop the time task, so we need restart
+			 * the time task
+			 */
+			startTimerTask();
+		}
+	}
+
+
+
+	@Override
+	public void onStop() {
+		super.onStop();
+		Log.d(TAG, "onStop()...") ;
+		if (_timekeeper.isrunning()) {
+			stopTimerTask();
+		}
+	}
+
+	@Override
+	public void onDestroy() {
+		Log.d(TAG, "onDestroy()...");
+		stopTimerTask();
+		super.onDestroy();
+	}
+
+
+
+
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		Log.d(TAG, "onSaveInstanceState()") ;
+		outState.putParcelable(STATE_TIMEKEEPER, _timekeeper);
+		
+	}
 
 	protected void changeState() {
 		if (_timekeeper.isrunning()) {
@@ -171,6 +232,14 @@ public class StopwatchFragment extends SherlockFragment {
 		}
 	}
 	
+	private void stopTimerTask() {
+		if (_task != null) {
+			_task.cancel();
+			_task = null ;
+		}
+	}
+	
+	
 	public void updateTime() {
 		getActivity().runOnUiThread(new Runnable(){
 
@@ -185,28 +254,30 @@ public class StopwatchFragment extends SherlockFragment {
 	public void printTime() {
 		long time = _timekeeper.getElapsedTime() ;
 		//Hours
-		view_timeDisplay[0].setImageResource(res_img_Digits[(int)(time/36000000)]);
-		view_timeDisplay[1].setImageResource(res_img_Digits[(int)((time / 3600000) % 10)]);
+		view_timeDisplay[0].setImageResource(
+				res_img_Digits[(int)(time/36000000)]);
+		view_timeDisplay[1].setImageResource(
+				res_img_Digits[(int)((time / 3600000) % 10)]);
 		
 		//Mintues
-		view_timeDisplay[2].setImageResource(res_img_Digits[(int)(time / 600000 % 6)]);
-		view_timeDisplay[3].setImageResource(res_img_Digits[(int)(time / 60000 % 10)]);
+		view_timeDisplay[2].setImageResource(
+				res_img_Digits[(int)(time / 600000 % 6)]);
+		view_timeDisplay[3].setImageResource(
+				res_img_Digits[(int)(time / 60000 % 10)]);
 		
 		//Seconds
-		view_timeDisplay[4].setImageResource(res_img_Digits[(int)(time / 10000 % 6)]);
-		view_timeDisplay[5].setImageResource(res_img_Digits[(int)(time / 1000 % 10)]);
+		view_timeDisplay[4].setImageResource(
+				res_img_Digits[(int)(time / 10000 % 6)]);
+		view_timeDisplay[5].setImageResource(
+				res_img_Digits[(int)(time / 1000 % 10)]);
 		
 		//milliseconds
-		view_timeDisplay[6].setImageResource(res_img_smallDigits[(int)(time / 100 % 10)]);
-		view_timeDisplay[7].setImageResource(res_img_smallDigits[(int)(time /10 % 10 )]);
+		view_timeDisplay[6].setImageResource(
+				res_img_smallDigits[(int)(time / 100 % 10)]);
+		view_timeDisplay[7].setImageResource(
+				res_img_smallDigits[(int)(time /10 % 10 )]);
 	}
 
 
 
-	private void stopTimerTask() {
-		if (_task != null) {
-			_task.cancel();
-			_task = null ;
-		}
-	}
 }

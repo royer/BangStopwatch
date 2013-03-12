@@ -17,22 +17,60 @@
 
 package com.royer.bangstopwatch;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.SystemClock;
+import android.util.Log;
 
-public class Timekeeper {
+public class Timekeeper implements Parcelable {
 
 	private long	_startStamp  = 0;
-	//private long	_elapsedTime = 0;
+	
+	/**
+	 * keep the elapsed time to display when activity restart
+	 */
+	private long	_elapsedTime = 0;
 	
 	private boolean	_isrunning = false;
+	
+	/**
+	 * constructor
+	 */	
+	public Timekeeper() {
+		_startStamp = 0 ;
+		_elapsedTime = 0;
+		_isrunning = false;
+	}
+	
+	/**
+	 * constructor to use when re-constructing from a parcel
+	 * 
+	 * @param in 
+	 *        a parcel from which to read 
+	 */
+	Timekeeper(Parcel in) {
+		readFromParcel(in);
+	}
 	
 	public long get_startStamp() {
 		return _startStamp;
 	}
 	
+	
 	/**
-	 * On first call or if {@link #reset()} was called, a new measurement will start.
-	 * Otherwise measurement is resumed.
+	 * because the time watch panel show the last lap elapsed time, 
+	 * so if there has laps, we need reset the elapsed time same as
+	 * the last lap elapsed time.
+	 * @param et
+	 */
+	public void set_elapsedTime(long et) {
+		_elapsedTime = et;
+	}
+	
+	
+	/**
+	 * not like normal stopwatch, Bang stopwatch always start a new measurement 
+	 * 
 	 */
 	public void start() {
 		if (_isrunning == false) {
@@ -59,8 +97,11 @@ public class Timekeeper {
 	public long getElapsedTime() {
 		long time = 0;
 		
-		if (_startStamp != 0) {
+		if (isrunning()) {
 			time = SystemClock.elapsedRealtime() - _startStamp;
+			_elapsedTime = time;
+		} else {
+			time = _elapsedTime ;
 		}
 		
 		return time;
@@ -72,7 +113,54 @@ public class Timekeeper {
 	}
 
 	public void stop() {
-		
+		getElapsedTime() ; 
 		_isrunning = false;
 	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		
+		dest.writeLong(_startStamp);
+		dest.writeLong(_elapsedTime);
+		dest.writeInt(_isrunning ? 1 : 0) ;
+		
+		Log.d("timekepper","writetoParcel() _startStamp: " + _startStamp + 
+				" _elapsedTime: " + _elapsedTime);
+	}
+	
+	
+	/**
+	 * call from constructor to create from a parcel
+	 *  
+	 * @param in
+	 *        a parcel from which to re-create
+	 */
+	private void readFromParcel(Parcel in) {
+		_startStamp = in.readLong() ;
+		_elapsedTime = in.readLong();
+		_isrunning  = (in.readInt() == 1) ;
+		Log.d("timekepper","readFromParcel() _startStamp: " + _startStamp + 
+				" _elapsedTime: " + _elapsedTime);
+	}
+	
+	
+	public static final Parcelable.Creator<Timekeeper> CREATOR = 
+			new Parcelable.Creator<Timekeeper>() {
+
+				@Override
+				public Timekeeper createFromParcel(Parcel source) {
+					
+					return new Timekeeper(source);
+				}
+
+				@Override
+				public Timekeeper[] newArray(int size) {
+					return new Timekeeper[size];
+				}
+			};
 }

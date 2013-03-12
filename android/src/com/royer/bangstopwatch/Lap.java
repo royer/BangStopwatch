@@ -1,6 +1,9 @@
 package com.royer.bangstopwatch;
 
-public class Lap {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class Lap implements Parcelable {
 
 	private long	_abstime;
 	
@@ -10,6 +13,11 @@ public class Lap {
 		_abstime = _laptime = 0;
 	}
 	
+	public Lap(Parcel in) {
+		readFromParcel(in);
+	}
+	
+
 	public Lap(long abstime, long laptime) {
 		set_abstime(abstime);
 		set_laptime(laptime);
@@ -30,5 +38,36 @@ public class Lap {
 	public void set_laptime(long _laptime) {
 		this._laptime = _laptime;
 	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeLong(_abstime);
+		dest.writeLong(_laptime);
+	}
+
+	private void readFromParcel(Parcel in) {
+		_abstime = in.readLong() ;
+		_laptime = in.readLong();
+	}
+	
+	
+	public static final Parcelable.Creator<Lap> CREATOR = 
+			new Parcelable.Creator<Lap>() {
+
+				@Override
+				public Lap createFromParcel(Parcel source) {
+					return new Lap(source);
+				}
+
+				@Override
+				public Lap[] newArray(int size) {
+					return new Lap[size];
+				}
+			};
 	
 }

@@ -1,8 +1,12 @@
 package com.royer.bangstopwatch;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
-public class LapManager {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class LapManager implements Parcelable {
 
 	// the beginning time stamp, usually get from Timekeeper
 	private long tmStart ;
@@ -12,6 +16,11 @@ public class LapManager {
 	public LapManager() {
 		tmStart = 0;
 	}
+	
+	private LapManager(Parcel in) {
+		readFromParcel(in);
+	}
+
 
 	public long getTmStart() {
 		return tmStart;
@@ -57,4 +66,44 @@ public class LapManager {
 		
 		_laps.add(newlap);
 	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeLong(tmStart);
+		Lap[] arylap = (Lap[]) _laps.toArray() ;
+		dest.writeParcelableArray(arylap, flags);
+		
+	}
+
+	private void readFromParcel(Parcel in) {
+		
+		tmStart = in.readLong();
+		
+		Lap[] arylap = (Lap[])in.readParcelableArray(
+				Lap.class.getClassLoader());
+		
+		_laps.addAll(Arrays.asList(arylap));
+		
+	}
+	
+	public static final Parcelable.Creator<LapManager> CREATOR = 
+			new Parcelable.Creator<LapManager>() {
+
+				@Override
+				public LapManager createFromParcel(Parcel source) {
+					
+					return new LapManager(source);
+				}
+
+				@Override
+				public LapManager[] newArray(int size) {
+					return new LapManager[size];
+				}
+			};
+
 }
