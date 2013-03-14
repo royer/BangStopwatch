@@ -8,7 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class TimerFragment extends SherlockFragment {
+public class TimerFragment extends SherlockFragment implements SaveRestoreMyData {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -21,6 +21,18 @@ public class TimerFragment extends SherlockFragment {
 			Bundle savedInstanceState) {
 		
 		return inflater.inflate(R.layout.timer, container, false);
+	}
+
+	@Override
+	public void onSaveMyData(Bundle onSavedInstance) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void OnRestoreMyData(Bundle onSavedInstance) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

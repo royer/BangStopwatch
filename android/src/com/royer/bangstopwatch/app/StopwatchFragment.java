@@ -36,7 +36,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 
-public class StopwatchFragment extends SherlockFragment {
+public class StopwatchFragment extends SherlockFragment implements SaveRestoreMyData {
 
 	public static final String TAG = "StopwatchFragment" ;
 	
@@ -276,6 +276,19 @@ public class StopwatchFragment extends SherlockFragment {
 				res_img_smallDigits[(int)(time / 100 % 10)]);
 		view_timeDisplay[7].setImageResource(
 				res_img_smallDigits[(int)(time /10 % 10 )]);
+	}
+
+	@Override
+	public void onSaveMyData(Bundle onSavedInstance) {
+		// TODO Auto-generated method stub
+		Log.d(TAG, "onSaveMyData") ;
+	}
+
+	@Override
+	public void OnRestoreMyData(Bundle onSavedInstance) {
+		// TODO Auto-generated method stub
+		Log.d(TAG, "onRestoreMyData") ;
+		
 	}
 
 

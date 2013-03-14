@@ -42,6 +42,7 @@ import com.actionbarsherlock.app.SherlockFragment;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 
 import com.royer.bangstopwatch.*;
+import com.royer.bangstopwatch.app.SaveRestoreMyData;
 import com.royer.bangstopwatch.app.StopwatchFragment;
 import com.royer.bangstopwatch.app.TimerFragment;
 
@@ -120,11 +121,13 @@ public class MainActivity extends SherlockFragmentActivity {
             private final Class<?> clss;
             private final Bundle args;
             private Fragment fragment;
+            private Bundle	forTabswitch ;	// because if switch tab, the fragment lost his own data ;
 
             TabInfo(String _tag, Class<?> _class, Bundle _args) {
                 tag = _tag;
                 clss = _class;
                 args = _args;
+                forTabswitch = new Bundle();
             }
         }
 
@@ -178,6 +181,9 @@ public class MainActivity extends SherlockFragmentActivity {
                 FragmentTransaction ft = mActivity.getSupportFragmentManager().beginTransaction();
                 if (mLastTab != null) {
                     if (mLastTab.fragment != null) {
+                    	// before detach call interface OnBeforeDetach, fragment can save data when attach back
+                    	// call fragment.OnBeforeDetach(bundle)
+                    	((SaveRestoreMyData)mLastTab.fragment).onSaveMyData(mLastTab.forTabswitch);
                         ft.detach(mLastTab.fragment);
                     }
                 }
@@ -187,6 +193,8 @@ public class MainActivity extends SherlockFragmentActivity {
                                 newTab.clss.getName(), newTab.args);
                         ft.add(mContainerId, newTab.fragment, newTab.tag);
                     } else {
+                    	// TODO call fragment.OnBeforeAttach(bundle) ;
+                    	((SaveRestoreMyData)newTab.fragment).OnRestoreMyData(newTab.forTabswitch);
                         ft.attach(newTab.fragment);
                     }
                 }
