@@ -100,7 +100,8 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 			_timekeeper = savedInstanceState.getParcelable(STATE_TIMEKEEPER);
 		} else {
 			Log.d(TAG,"savedInstanceState == NULL") ;
-			_timekeeper = new Timekeeper();
+			if (_timekeeper == null)
+				_timekeeper = new Timekeeper();
 		}
 		
 		printTime();
@@ -280,15 +281,16 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 
 	@Override
 	public void onSaveMyData(Bundle onSavedInstance) {
-		// TODO Auto-generated method stub
+		
 		Log.d(TAG, "onSaveMyData") ;
+		onSavedInstance.putParcelable(STATE_TIMEKEEPER, _timekeeper);
 	}
 
 	@Override
 	public void OnRestoreMyData(Bundle onSavedInstance) {
 		// TODO Auto-generated method stub
 		Log.d(TAG, "onRestoreMyData") ;
-		
+		_timekeeper = onSavedInstance.getParcelable(STATE_TIMEKEEPER);
 	}
 
 
