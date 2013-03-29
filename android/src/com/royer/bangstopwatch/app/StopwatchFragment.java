@@ -105,6 +105,7 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 		}
 		
 		printTime();
+		updateState();
 		
 		Log.d(TAG, "Leave OnActivityCreated...");
 	}
@@ -188,7 +189,7 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 
 	private void updateState() {
 		if (_timekeeper.isrunning()) {
-			btnStart.setText("Stop");
+			btnStart.setText(R.string.stop);
 			startTimerTask();
 		} else {
 			btnStart.setText(R.string.start);
