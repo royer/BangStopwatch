@@ -58,6 +58,7 @@ public class MainActivity extends SherlockFragmentActivity {
         setContentView(R.layout.mainactivity);
         
         ActionBar actionbar = getSupportActionBar();
+        actionbar.hide();
         //actionbar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         //actionbar.setDisplayShowHomeEnabled(false);
         //actionbar.setDisplayShowTitleEnabled(false);
@@ -83,6 +84,10 @@ public class MainActivity extends SherlockFragmentActivity {
         actionbar.addTab(tab);
         */
         
+    }
+    
+    public void EnableTab(int tabindex,boolean enabled) {
+    	mTabHost.getTabWidget().getChildTabViewAt(tabindex).setEnabled(enabled);
     }
     
     
@@ -194,7 +199,12 @@ public class MainActivity extends SherlockFragmentActivity {
                         ft.add(mContainerId, newTab.fragment, newTab.tag);
                     } else {
                     	// TODO call fragment.OnBeforeAttach(bundle) ;
-                    	((SaveRestoreMyData)newTab.fragment).OnRestoreMyData(newTab.forTabswitch);
+                    	if (mLastTab != null) {
+                    		// if mLastTab == null , the TabChanged just because screen roate, 
+                    		// the newTab.fragment is restore from a previously saved stated. 
+                    		// and this situation that caused by TabManager.addTab()
+                    		((SaveRestoreMyData)newTab.fragment).OnRestoreMyData(newTab.forTabswitch);
+                    	}
                         ft.attach(newTab.fragment);
                     }
                 }

@@ -46,7 +46,7 @@ public class LapManager implements Parcelable {
 	 * add a Lap by current time
 	 * 
 	 * @param tmCurrent
-	 *                 the current time                 
+	 *        the current time                 
 	 */
 	public void appandLap(long tmCurrent) {
 		

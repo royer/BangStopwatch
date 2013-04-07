@@ -14,21 +14,25 @@
   * limitations under the License.
   */
 
+
 package com.royer.bangstopwatch.app;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
 import com.actionbarsherlock.app.SherlockFragment;
+import com.royer.bangstopwatch.MainActivity;
 import com.royer.bangstopwatch.LapManager;
 import com.royer.bangstopwatch.R ;
 import com.royer.bangstopwatch.Timekeeper;
 import com.royer.bangstopwatch.adapters.LapArrayAdapter;
+import com.royer.libaray.ui.CountdownWindow;
 
-import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,12 +40,18 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 
-public class StopwatchFragment extends SherlockFragment implements SaveRestoreMyData {
+public class StopwatchFragment extends SherlockFragment implements SaveRestoreMyData ,
+CountdownWindow.CountdownListener
+{
 
 	public static final String TAG = "StopwatchFragment" ;
 	
 	private static final String STATE_TIMEKEEPER = 
 			"royer.bangstopwatch.stopwatch.timekeeper" ;
+	private static final String STATE_COUNTDOWNWND = 
+			"royer.bangstopwatch.stopwatch.countdownwnd" ;
+	private static final String STATE_STATE = 
+			"royer.bangstopwatch.stopwatch.state";
 	
 	
 	private int[] res_img_Digits = { 
@@ -66,12 +76,19 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 	private Timekeeper _timekeeper ;
 	
 	private Button btnStart ;
+	
+	private int state ;
+	private static final int STATE_NONE = 0;
+	private static final int STATE_COUNTDOWN  = 1;
+	private static final int STATE_RUNNING = 2;
 
 	
 	
 	private LapArrayAdapter	mLapAdapter ;
 	private LapManager		mLapManager = null ;
 	private ListView		mLapList ;
+	
+	CountdownWindow	wndCountdown ;
 	
 
 	@Override
@@ -82,22 +99,53 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 		
 		InitTimeDisplayView();
 		
-		
 		mLapList = (ListView)getView().findViewById(R.id.listLap);
 		InitLapList();
+		
+		wndCountdown = new CountdownWindow(getActivity(),this);
 		
 		btnStart = (Button)getView().findViewById(R.id.btnStart);
 		btnStart.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
-				changeState();
+				if (state == STATE_NONE) {
+
+				//wndCountdown.showAtLocation(getActivity().findViewById(R.id.main), Gravity.CENTER, 0, 0);
+					state = STATE_COUNTDOWN;
+					wndCountdown.Start(getActivity().findViewById(R.id.main), 5);
+					
+					
+				} else {
+					changeState();
+					state = STATE_NONE;
+				}
+				((MainActivity)getActivity()).EnableTab(1, state == STATE_NONE);
 			}
 		});
 		
 		if (savedInstanceState != null) {
 			Log.d(TAG, "savedInstanceState " + savedInstanceState.toString());
 			_timekeeper = savedInstanceState.getParcelable(STATE_TIMEKEEPER);
+			state = savedInstanceState.getInt(STATE_STATE);
+			((MainActivity)getActivity()).EnableTab(1, state == STATE_NONE);
+			
+			wndCountdown.readFromBundle(savedInstanceState) ;
+			
+			if (wndCountdown.isRunning()) {
+				// popupwindow cann't not show before Activity window has been displayed.
+				// must use post method until all necessary start up life cycle methods get completed.
+				getActivity().findViewById(R.id.main).post(new Runnable() {
+
+					@Override
+					public void run() {
+						
+						wndCountdown.restart(getActivity().findViewById(R.id.main));
+						
+					}
+					
+				});
+			}
 		} else {
 			Log.d(TAG,"savedInstanceState == NULL") ;
 			if (_timekeeper == null)
@@ -106,6 +154,7 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 		
 		printTime();
 		updateState();
+		
 		
 		Log.d(TAG, "Leave OnActivityCreated...");
 	}
@@ -146,10 +195,13 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 		}
 	}
 
+
+
 	@Override
 	public void onDestroy() {
 		Log.d(TAG, "onDestroy()...");
 		stopTimerTask();
+		wndCountdown.cancel();
 		super.onDestroy();
 	}
 
@@ -162,6 +214,8 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 		super.onSaveInstanceState(outState);
 		Log.d(TAG, "onSaveInstanceState()") ;
 		outState.putParcelable(STATE_TIMEKEEPER, _timekeeper);
+		outState.putInt(STATE_STATE, state);
+		wndCountdown.writeToBundle(outState);
 		
 	}
 
@@ -285,13 +339,23 @@ public class StopwatchFragment extends SherlockFragment implements SaveRestoreMy
 		
 		Log.d(TAG, "onSaveMyData") ;
 		onSavedInstance.putParcelable(STATE_TIMEKEEPER, _timekeeper);
+		//onSavedInstance.putParcelable(STATE_COUNTDOWNWND, wndCountdown);
+		wndCountdown.writeToBundle(onSavedInstance);
 	}
 
 	@Override
 	public void OnRestoreMyData(Bundle onSavedInstance) {
-		// TODO Auto-generated method stub
+		
 		Log.d(TAG, "onRestoreMyData") ;
 		_timekeeper = onSavedInstance.getParcelable(STATE_TIMEKEEPER);
+		wndCountdown.readFromBundle(onSavedInstance);
+	}
+
+	@Override
+	public void OnCountdownFinished() {
+		// TODO Auto-generated method stub
+		state = STATE_RUNNING;
+		changeState();
 	}
 
 
