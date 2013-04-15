@@ -24,12 +24,18 @@ import com.actionbarsherlock.app.SherlockFragment;
 import com.royer.bangstopwatch.MainActivity;
 import com.royer.bangstopwatch.LapManager;
 import com.royer.bangstopwatch.R ;
+import com.royer.bangstopwatch.RecordService;
+import com.royer.bangstopwatch.RecordService.LocalBinder;
 import com.royer.bangstopwatch.Timekeeper;
 import com.royer.bangstopwatch.adapters.LapArrayAdapter;
 import com.royer.libaray.ui.CountdownWindow;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.Gravity;
@@ -52,6 +58,8 @@ CountdownWindow.CountdownListener
 			"royer.bangstopwatch.stopwatch.countdownwnd" ;
 	private static final String STATE_STATE = 
 			"royer.bangstopwatch.stopwatch.state";
+	private static final String STATE_BOUNDING = 
+			"royer.bangstopwatch.stopwatch.bounding";
 	
 	
 	private int[] res_img_Digits = { 
@@ -90,6 +98,9 @@ CountdownWindow.CountdownListener
 	
 	CountdownWindow	wndCountdown ;
 	
+	RecordService	mService ;
+	boolean			mBound = false;
+	
 
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
@@ -111,7 +122,6 @@ CountdownWindow.CountdownListener
 			public void onClick(View v) {
 				if (state == STATE_NONE) {
 
-				//wndCountdown.showAtLocation(getActivity().findViewById(R.id.main), Gravity.CENTER, 0, 0);
 					state = STATE_COUNTDOWN;
 					wndCountdown.Start(getActivity().findViewById(R.id.main), 5);
 					
@@ -119,6 +129,13 @@ CountdownWindow.CountdownListener
 				} else {
 					changeState();
 					state = STATE_NONE;
+					
+					// unBind Recordservice
+					if (mBound) {
+						getActivity().unbindService(mConnection);
+						getActivity().stopService(new Intent(getActivity(), RecordService.class));
+						mBound = false;
+					}
 				}
 				((MainActivity)getActivity()).EnableTab(1, state == STATE_NONE);
 			}
@@ -128,12 +145,13 @@ CountdownWindow.CountdownListener
 			Log.d(TAG, "savedInstanceState " + savedInstanceState.toString());
 			_timekeeper = savedInstanceState.getParcelable(STATE_TIMEKEEPER);
 			state = savedInstanceState.getInt(STATE_STATE);
+			mBound = savedInstanceState.getBoolean(STATE_BOUNDING);
 			((MainActivity)getActivity()).EnableTab(1, state == STATE_NONE);
 			
 			wndCountdown.readFromBundle(savedInstanceState) ;
 			
 			if (wndCountdown.isRunning()) {
-				// popupwindow cann't not show before Activity window has been displayed.
+				// popupwindow cann't show before Activity window has been displayed.
 				// must use post method until all necessary start up life cycle methods get completed.
 				getActivity().findViewById(R.id.main).post(new Runnable() {
 
@@ -182,6 +200,12 @@ CountdownWindow.CountdownListener
 			 */
 			startTimerTask();
 		}
+		
+		if (state == this.STATE_RUNNING) {
+			// it must bound the service
+			Intent intent = new Intent(getActivity(), RecordService.class);
+			getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		}
 	}
 
 
@@ -192,6 +216,10 @@ CountdownWindow.CountdownListener
 		Log.d(TAG, "onStop()...") ;
 		if (_timekeeper.isrunning()) {
 			stopTimerTask();
+		}
+		
+		if (state == this.STATE_RUNNING) {
+			getActivity().unbindService(mConnection);
 		}
 	}
 
@@ -215,6 +243,7 @@ CountdownWindow.CountdownListener
 		Log.d(TAG, "onSaveInstanceState()") ;
 		outState.putParcelable(STATE_TIMEKEEPER, _timekeeper);
 		outState.putInt(STATE_STATE, state);
+		outState.putBoolean(STATE_BOUNDING, mBound);
 		wndCountdown.writeToBundle(outState);
 		
 	}
@@ -353,11 +382,35 @@ CountdownWindow.CountdownListener
 
 	@Override
 	public void OnCountdownFinished() {
-		// TODO Auto-generated method stub
 		state = STATE_RUNNING;
 		changeState();
+		
+		// bind RecordService
+		Intent intent = new Intent(getActivity(), RecordService.class);
+		getActivity().startService(intent);
+		getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 	}
 
 
+	private ServiceConnection mConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			LocalBinder binder = (LocalBinder)service;
+			mService = binder.getService();
+			mBound = true;
+			
+			Log.d(TAG,"onServiceConnected");
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			mBound = false;
+			
+			Log.d(TAG,"onServiceDisconnected");
+			
+		}
+		
+	} ;
 
 }
