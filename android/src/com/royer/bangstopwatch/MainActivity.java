@@ -31,6 +31,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTabHost;
 import android.support.v4.app.FragmentTransaction;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.widget.TabHost;
@@ -103,7 +104,21 @@ public class MainActivity extends SherlockFragmentActivity {
     */
     
     
-    /**
+    @Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+    	if (keyCode == KeyEvent.KEYCODE_BACK) {
+    		if (mTabHost.getCurrentTab() == 0) {
+    			StopwatchFragment fragment = (StopwatchFragment)this.getSupportFragmentManager().findFragmentByTag(mTabHost.getCurrentTabTag());;
+    			fragment.onAppWillQuit();
+    		}
+    	}
+		return super.onKeyDown(keyCode, event);
+	}
+
+
+
+
+	/**
      * This is a helper class that implements a generic mechanism for
      * associating fragments with the tabs in a tab host.  It relies on a
      * trick.  Normally a tab host has a simple API for supplying a View or

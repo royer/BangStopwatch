@@ -17,10 +17,12 @@
 
 package com.royer.bangstopwatch.app;
 
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import com.actionbarsherlock.app.SherlockFragment;
+import com.royer.bangstopwatch.Bang;
 import com.royer.bangstopwatch.MainActivity;
 import com.royer.bangstopwatch.LapManager;
 import com.royer.bangstopwatch.R ;
@@ -47,13 +49,15 @@ import android.widget.ImageView;
 import android.widget.ListView;
 
 public class StopwatchFragment extends SherlockFragment implements SaveRestoreMyData ,
-CountdownWindow.CountdownListener
+CountdownWindow.CountdownListener,Bang
 {
 
 	public static final String TAG = "StopwatchFragment" ;
 	
 	private static final String STATE_TIMEKEEPER = 
 			"royer.bangstopwatch.stopwatch.timekeeper" ;
+	private static final String STATE_LAPS = 
+			"royer.bangstopwatch.stopwatch.laps";
 	private static final String STATE_COUNTDOWNWND = 
 			"royer.bangstopwatch.stopwatch.countdownwnd" ;
 	private static final String STATE_STATE = 
@@ -111,7 +115,6 @@ CountdownWindow.CountdownListener
 		InitTimeDisplayView();
 		
 		mLapList = (ListView)getView().findViewById(R.id.listLap);
-		InitLapList();
 		
 		wndCountdown = new CountdownWindow(getActivity(),this);
 		
@@ -132,6 +135,8 @@ CountdownWindow.CountdownListener
 					
 					// unBind Recordservice
 					if (mBound) {
+						mService.stopRecord();
+						mService.unsetBang();
 						getActivity().unbindService(mConnection);
 						getActivity().stopService(new Intent(getActivity(), RecordService.class));
 						mBound = false;
@@ -144,11 +149,13 @@ CountdownWindow.CountdownListener
 		if (savedInstanceState != null) {
 			Log.d(TAG, "savedInstanceState " + savedInstanceState.toString());
 			_timekeeper = savedInstanceState.getParcelable(STATE_TIMEKEEPER);
+			mLapManager = savedInstanceState.getParcelable(STATE_LAPS);
 			state = savedInstanceState.getInt(STATE_STATE);
 			mBound = savedInstanceState.getBoolean(STATE_BOUNDING);
 			((MainActivity)getActivity()).EnableTab(1, state == STATE_NONE);
 			
 			wndCountdown.readFromBundle(savedInstanceState) ;
+			
 			
 			if (wndCountdown.isRunning()) {
 				// popupwindow cann't show before Activity window has been displayed.
@@ -164,11 +171,16 @@ CountdownWindow.CountdownListener
 					
 				});
 			}
+			
+
 		} else {
 			Log.d(TAG,"savedInstanceState == NULL") ;
 			if (_timekeeper == null)
 				_timekeeper = new Timekeeper();
+			if (mLapManager == null)
+				mLapManager = new LapManager();
 		}
+		InitLapList();
 		
 		printTime();
 		updateState();
@@ -179,7 +191,6 @@ CountdownWindow.CountdownListener
 	
 	public void InitLapList() {
 		
-		mLapManager = new LapManager();
 		mLapAdapter = new LapArrayAdapter(getActivity(),mLapManager.get_laps());
 		
 		mLapList.setAdapter(mLapAdapter);
@@ -219,6 +230,7 @@ CountdownWindow.CountdownListener
 		}
 		
 		if (state == this.STATE_RUNNING) {
+			mService.unsetBang();
 			getActivity().unbindService(mConnection);
 		}
 	}
@@ -242,6 +254,7 @@ CountdownWindow.CountdownListener
 		super.onSaveInstanceState(outState);
 		Log.d(TAG, "onSaveInstanceState()") ;
 		outState.putParcelable(STATE_TIMEKEEPER, _timekeeper);
+		outState.putParcelable(STATE_LAPS, mLapManager);
 		outState.putInt(STATE_STATE, state);
 		outState.putBoolean(STATE_BOUNDING, mBound);
 		wndCountdown.writeToBundle(outState);
@@ -391,6 +404,32 @@ CountdownWindow.CountdownListener
 		getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 	}
 
+	public void onAppWillQuit() {
+		if (state == STATE_RUNNING) {
+			Intent intent = new Intent(getActivity(),RecordService.class);
+			mService.unsetBang();
+			getActivity().unbindService(mConnection);
+			getActivity().stopService(intent);
+			state = STATE_NONE;
+		}
+	}
+	
+	public void onBang() {
+		ArrayList<Long> ary = mService.getLaps(mLapManager.get_laps().size());
+		synchronized(this) {
+			for (Long l : ary) {
+				mLapManager.appandLap(l);
+			}
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					mLapAdapter.notifyDataSetChanged();
+				}
+				
+			});
+		}
+	}
 
 	private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -400,6 +439,11 @@ CountdownWindow.CountdownListener
 			mService = binder.getService();
 			mBound = true;
 			
+			if (state == STATE_RUNNING) {
+				onBang();
+			}
+			mService.setBang(StopwatchFragment.this) ;
+			mService.startRecord();
 			Log.d(TAG,"onServiceConnected");
 		}
 
