@@ -32,22 +32,22 @@ public class RecordService extends Service {
 	/**
 	 * if peaks continue time less this value (ms), it don't conside a counting sound
 	*/
-	private static final int MIN_PEAKS_TIME = 20;
+	private static final int MIN_PEAKS_TIME = 50;
 	
 	/*
 	 * the value that conside a counting sound start
 	 */
-	private static final float ENTRY_VALUE = 0.95f;
+	private static final float ENTRY_VALUE = 1.0f;
 	
 	/*
 	 * the value that conside a counting sound end, it means silence start
 	 */
-	private static final float LEAVE_VALUE = 0.85f;
+	private static final float LEAVE_VALUE = 0.95f;
 	
 	/*
 	 * when the value less leave value (ms), it should continue this time, that can be conside a true silence
 	 */
-	private static final int SLIENCE_DURING_TIME = 20;
+	private static final int SLIENCE_DURING_TIME = 70;
 	
 	/*
 	 * RMS(root mean square): the sound block rms should great this value
@@ -276,7 +276,10 @@ public class RecordService extends Service {
 										//Log.d("dd","rms="+rms+" CB = "+cbcontinuepeak);
 										if (rms > limitrms) {
 											mService.AddLap(SystemClock.elapsedRealtime());
-											mService.mBang.onBang() ;
+											synchronized(this) {
+												if (mService.mBang != null)
+													mService.mBang.onBang() ;
+											}
 										}
 										//reset flag for next detect
 									} else {
@@ -297,6 +300,9 @@ public class RecordService extends Service {
 							
 						}
 					}
+				}
+				else {
+					Log.d(TAG,"record error. read = " + read) ;
 				}
 			}
 			

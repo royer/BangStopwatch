@@ -31,6 +31,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTabHost;
 import android.support.v4.app.FragmentTransaction;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
@@ -72,6 +74,9 @@ public class MainActivity extends SherlockFragmentActivity {
         		StopwatchFragment.class, null) ;
         mTabManager.addTab(mTabHost.newTabSpec("timer").setIndicator("Timer"), 
         		TimerFragment.class, null);
+        
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        Log.d("TAG",metrics.toString());
         
         /*
         Tab tab = actionbar.newTab()

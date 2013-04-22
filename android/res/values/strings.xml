@@ -9,6 +9,9 @@
     <string name="stop">Stop</string>
     <string name="time_fmt_no_milli">%1$02d:%2$02d:%3$02d</string>
     <string name="time_fmt">%1$02d:%2$02d:%3$02d.%4$02d</string>
+    <string name="txtHours">Hours</string>
+    <string name="txtMinutes">Minutes</string>
+    <string name="txtSeconds">Seconds</string>
 
 
 </resources>

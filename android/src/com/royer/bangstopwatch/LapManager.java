@@ -75,7 +75,7 @@ public class LapManager implements Parcelable {
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		dest.writeLong(tmStart);
-		Lap[] arylap = (Lap[]) _laps.toArray() ;
+		Lap[] arylap = _laps.toArray(new Lap[0]) ;
 		dest.writeParcelableArray(arylap, flags);
 		
 	}
