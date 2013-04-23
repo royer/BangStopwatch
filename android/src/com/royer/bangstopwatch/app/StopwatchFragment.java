@@ -36,6 +36,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -47,6 +48,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 public class StopwatchFragment extends SherlockFragment implements SaveRestoreMyData ,
 CountdownWindow.CountdownListener,Bang
@@ -124,6 +126,16 @@ CountdownWindow.CountdownListener,Bang
 			@Override
 			public void onClick(View v) {
 				if (state == STATE_NONE) {
+					
+					AudioManager audiomanager = (AudioManager) getActivity().getSystemService(Context.AUDIO_SERVICE) ;
+					Log.d(TAG,"AudioMode = " + audiomanager.getMode());
+					if (audiomanager.getMode() != AudioManager.MODE_NORMAL) {
+						Context context = getActivity().getApplicationContext();
+						
+						Toast toast = Toast.makeText(context, R.string.strInCalling, 5);
+						toast.show();
+						return ;
+					}
 
 					state = STATE_COUNTDOWN;
 					wndCountdown.Start(getActivity().findViewById(R.id.main), 5);
