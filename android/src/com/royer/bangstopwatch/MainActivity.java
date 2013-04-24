@@ -53,6 +53,10 @@ public class MainActivity extends SherlockFragmentActivity {
 	
     TabHost mTabHost;
     TabManager mTabManager;
+    
+    private static final String TAG = "MainActivity" ;
+    private static final String STATE_ACTIVITED_TAB = 
+    		"royer.bangstopwatch.ACTIVITED_TAB";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,8 +79,13 @@ public class MainActivity extends SherlockFragmentActivity {
         mTabManager.addTab(mTabHost.newTabSpec("timer").setIndicator("Timer"), 
         		TimerFragment.class, null);
         
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        Log.d("TAG",metrics.toString());
+        Log.d(TAG,"onCreate") ;
+        
+        if (savedInstanceState != null) {
+        	// TODO bug , countdownwindow which in StopWatchFragment is null
+        	//mTabHost.setCurrentTab(savedInstanceState.getInt(STATE_ACTIVITED_TAB));
+        }
+
         
         /*
         Tab tab = actionbar.newTab()
@@ -92,7 +101,31 @@ public class MainActivity extends SherlockFragmentActivity {
         
     }
     
-    public void EnableTab(int tabindex,boolean enabled) {
+    
+    
+    @Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		
+    	int currenttab = mTabHost.getCurrentTab();
+    	Log.d(TAG,"onSaveInstanceState , current tab = " + currenttab) ;
+    	outState.putInt(STATE_ACTIVITED_TAB, currenttab);
+	}
+
+
+
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+		
+		int currenttab = savedInstanceState.getInt(STATE_ACTIVITED_TAB,0) ;
+		Log.d(TAG,"onRestorInstanceState, currenttab = " + currenttab) ;
+		mTabHost.setCurrentTab(currenttab);
+	}
+
+
+
+	public void EnableTab(int tabindex,boolean enabled) {
     	mTabHost.getTabWidget().getChildTabViewAt(tabindex).setEnabled(enabled);
     }
     
@@ -113,7 +146,7 @@ public class MainActivity extends SherlockFragmentActivity {
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
     	if (keyCode == KeyEvent.KEYCODE_BACK) {
     		if (mTabHost.getCurrentTab() == 0) {
-    			StopwatchFragment fragment = (StopwatchFragment)this.getSupportFragmentManager().findFragmentByTag(mTabHost.getCurrentTabTag());;
+    			StopwatchFragment fragment = (StopwatchFragment)this.getSupportFragmentManager().findFragmentByTag(mTabHost.getCurrentTabTag());
     			fragment.onAppWillQuit();
     		}
     	}

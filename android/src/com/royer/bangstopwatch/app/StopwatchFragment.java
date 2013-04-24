@@ -36,7 +36,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.AudioFormat;
 import android.media.AudioManager;
+import android.media.AudioRecord;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -109,6 +111,12 @@ CountdownWindow.CountdownListener,Bang
 	
 
 	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		Log.d(TAG,"onCreate") ;
+		super.onCreate(savedInstanceState);
+	}
+
+	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		
@@ -118,7 +126,11 @@ CountdownWindow.CountdownListener,Bang
 		
 		mLapList = (ListView)getView().findViewById(R.id.listLap);
 		
-		wndCountdown = new CountdownWindow(getActivity(),this);
+		
+		//TODO bad design to new class in onActivityCreated, because if re attach ,the fragment still exist,
+		if (wndCountdown == null )
+			wndCountdown = new CountdownWindow(getActivity(),this);
+		
 		
 		btnStart = (Button)getView().findViewById(R.id.btnStart);
 		btnStart.setOnClickListener(new View.OnClickListener() {
@@ -126,6 +138,14 @@ CountdownWindow.CountdownListener,Bang
 			@Override
 			public void onClick(View v) {
 				if (state == STATE_NONE) {
+					// detect does device support record ?
+					if (AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) < 0) {
+						Context context = getActivity().getApplicationContext();
+						
+						Toast toast = Toast.makeText(context, R.string.strNoRecorder, 5);
+						toast.show();
+						return ;
+					}
 					
 					AudioManager audiomanager = (AudioManager) getActivity().getSystemService(Context.AUDIO_SERVICE) ;
 					Log.d(TAG,"AudioMode = " + audiomanager.getMode());
@@ -390,19 +410,23 @@ CountdownWindow.CountdownListener,Bang
 
 	@Override
 	public void onSaveMyData(Bundle onSavedInstance) {
-		
+		/*
 		Log.d(TAG, "onSaveMyData") ;
-		onSavedInstance.putParcelable(STATE_TIMEKEEPER, _timekeeper);
+		if (_timekeeper != null)
+			onSavedInstance.putParcelable(STATE_TIMEKEEPER, _timekeeper);
 		//onSavedInstance.putParcelable(STATE_COUNTDOWNWND, wndCountdown);
-		wndCountdown.writeToBundle(onSavedInstance);
+		if (wndCountdown != null)
+			wndCountdown.writeToBundle(onSavedInstance);
+		*/
 	}
 
 	@Override
 	public void OnRestoreMyData(Bundle onSavedInstance) {
-		
+		/*
 		Log.d(TAG, "onRestoreMyData") ;
 		_timekeeper = onSavedInstance.getParcelable(STATE_TIMEKEEPER);
 		wndCountdown.readFromBundle(onSavedInstance);
+		*/
 	}
 
 	@Override
