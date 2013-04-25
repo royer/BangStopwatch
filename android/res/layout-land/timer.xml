@@ -164,12 +164,6 @@
                 android:text="3"
                 android:textSize="20sp"
                 android:textStyle="bold" />
-            </TableRow>
-
-        <TableRow
-            android:id="@+id/tableRow4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
             <Button
                 android:id="@+id/btn4"
                 android:layout_width="wrap_content"
@@ -184,6 +178,19 @@
                 android:text="5"
                 android:textSize="20sp"
                 android:textStyle="bold" />
+ 
+            <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:scaleType="center"
+                android:src="@android:drawable/ic_input_delete" />               
+            </TableRow>
+
+        <TableRow
+            android:id="@+id/tableRow4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" >
             <Button
                 android:id="@+id/btn6"
                 android:layout_width="wrap_content"
@@ -191,12 +198,6 @@
                 android:text="6"
                 android:textSize="20sp"
                 android:textStyle="bold" />
-        </TableRow>
-
-        <TableRow
-            android:id="@+id/tableRow5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
             <Button
                 android:id="@+id/btn7"
                 android:layout_width="wrap_content"
@@ -218,18 +219,6 @@
                 android:text="9"
                 android:textSize="20sp"
                 android:textStyle="bold" />
-        </TableRow>
-
-        <TableRow
-            android:id="@+id/tableRow6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
-            <Button
-                android:id="@+id/btnNone"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="20sp"
-                android:textStyle="bold" />
             <Button
                 android:id="@+id/btn0"
                 android:layout_width="wrap_content"
@@ -237,20 +226,15 @@
                 android:text="0"
                 android:textSize="20sp"
                 android:textStyle="bold" />
-
-            <ImageButton
-                android:id="@+id/btnDelete"
-                android:layout_width="wrap_content"
-                android:layout_height="fill_parent"
-                android:scaleType="center"
-                android:src="@android:drawable/ic_input_delete" />               
+			<Button 
+			    android:id="@+id/btnStart"
+			    android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			    android:text="@string/start"
+			    android:textSize="20sp"
+			    android:textStyle="bold" />
+             
         </TableRow>
+
     </TableLayout>
-	<Button 
-	    android:id="@+id/btnStart"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_margin="3dp"
-	   	android:background="@color/start"
-	    android:text="@string/start" />
 </LinearLayout>
