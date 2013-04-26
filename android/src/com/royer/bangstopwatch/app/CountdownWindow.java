@@ -1,20 +1,28 @@
-package com.royer.libaray.ui;
+package com.royer.bangstopwatch.app;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.royer.bangstopwatch.R ;
+
+//import android.R;
 import android.app.Activity;
 import android.content.Context;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+
+
+
 
 public class CountdownWindow {
 	
@@ -37,6 +45,8 @@ public class CountdownWindow {
 	
 	Timer		mTimer;
 	TimerTask	mTimerTask;
+	
+	MediaPlayer	mediaplayer = null;
 	
 	final Activity			mActivity ;
 	final CountdownListener	mListener ;
@@ -71,7 +81,6 @@ public class CountdownWindow {
 		LayoutParams params = new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
 		
 		layout.addView(mTxtView, params);
-		
 		
 		mPopupWindow = new PopupWindow(layout,100,100,false);
 	}
@@ -109,7 +118,7 @@ public class CountdownWindow {
 					long lf = lms / 1000 + (lms % 1000 > 10 ? 1 : 0) ;
 					if (lf != mLeftSecond) {
 						mLeftSecond = (int)lf;
-						// TODO need update update popupwindow text;
+						
 						mActivity.runOnUiThread(new Runnable() {
 
 							@Override
@@ -120,7 +129,8 @@ public class CountdownWindow {
 							
 						});
 						if ((mStartStamp + (mCountdownSec) * 1000 - currenttime) <= 10) {
-							// TODO finished countdown
+							
+							PlaySound(R.raw.countdownend) ;
 							
 							mActivity.runOnUiThread(new Runnable(){
 
@@ -131,8 +141,9 @@ public class CountdownWindow {
 								}
 								
 							});
+							return;
 						} else {
-							// TODO need sound;
+							PlaySound(R.raw.countdowning);
 						}
 					}
 				}
@@ -162,9 +173,15 @@ public class CountdownWindow {
 			
 			mPopupWindow.dismiss();
 		}
+		
+		if (mediaplayer != null) {
+			mediaplayer.release();
+			mediaplayer = null;
+		}
 	}
 	
 	private void CountdownDone() {
+		
 		
 		mTimerTask.cancel();
 		mTimerTask = null ;
@@ -172,6 +189,36 @@ public class CountdownWindow {
 		
 		mPopupWindow.dismiss();
 		mListener.OnCountdownFinished() ;
+	}
+	
+	private void PlaySound(int resid) {
+		if (mediaplayer != null) {
+			mediaplayer.release();
+			mediaplayer = null ;
+		}
+		
+		mediaplayer = MediaPlayer.create(mActivity, resid);
+		mediaplayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+			
+			@Override
+			public void onCompletion(MediaPlayer mp) {
+				mp.release();
+				if (mp == mediaplayer) {
+					mediaplayer = null ;
+				}
+			}
+		});
+		
+		mediaplayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+			
+			@Override
+			public boolean onError(MediaPlayer mp, int what, int extra) {
+				mp.reset();
+				return false;
+			}
+		});
+		
+		mediaplayer.start();
 	}
 
 	

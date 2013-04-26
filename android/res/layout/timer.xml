@@ -252,5 +252,7 @@
 	    android:layout_height="wrap_content"
 	    android:layout_margin="3dp"
 	   	android:background="@color/start"
-	    android:text="@string/start" />
+	    android:text="@string/start"
+	    android:textSize="20sp"
+	    android:textStyle="bold" />
 </LinearLayout>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">BangStopwatch</string>
+    <string name="app_name">Shooting Recorder</string>
     <string name="menu_settings">Settings</string>
-    <string name="stopwatch">Stopwatch</string>
-    <string name="Timer">Timer</string>
+    <string name="Recorder">Recorder</string>
+    <string name="Practice">Practice</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
     <string name="time_fmt_no_milli">%1$02d:%2$02d:%3$02d</string>

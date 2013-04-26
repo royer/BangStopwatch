@@ -30,7 +30,6 @@ import com.royer.bangstopwatch.RecordService;
 import com.royer.bangstopwatch.RecordService.LocalBinder;
 import com.royer.bangstopwatch.Timekeeper;
 import com.royer.bangstopwatch.adapters.LapArrayAdapter;
-import com.royer.libaray.ui.CountdownWindow;
 
 import android.content.ComponentName;
 import android.content.Context;
