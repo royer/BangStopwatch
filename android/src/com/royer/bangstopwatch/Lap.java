@@ -5,8 +5,14 @@ import android.os.Parcelable;
 
 public class Lap implements Parcelable {
 
+	/**
+	 * from start to this lap total elapsed time
+	 */
 	private long	_abstime;
 	
+	/**
+	 * from previous lap to this lap elapsed time
+	 */
 	private long	_laptime;
 	
 	public Lap() {

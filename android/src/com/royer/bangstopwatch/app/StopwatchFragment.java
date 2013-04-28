@@ -42,10 +42,16 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -124,7 +130,7 @@ CountdownWindow.CountdownListener,Bang
 		InitTimeDisplayView();
 		
 		mLapList = (ListView)getView().findViewById(R.id.listLap);
-		
+		this.registerForContextMenu(mLapList);
 		
 		//TODO bad design to new class in onActivityCreated, because if re attach ,the fragment still exist,
 		if (wndCountdown == null )
@@ -163,7 +169,9 @@ CountdownWindow.CountdownListener,Bang
 				} else {
 					changeState();
 					state = STATE_NONE;
-					
+					updateRealElapseTime() ;
+					printTime();
+
 					// unBind Recordservice
 					if (mBound) {
 						mService.stopRecord();
@@ -225,9 +233,39 @@ CountdownWindow.CountdownListener,Bang
 		mLapAdapter = new LapArrayAdapter(getActivity(),mLapManager.get_laps());
 		
 		mLapList.setAdapter(mLapAdapter);
+		
 	}
 
 
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		
+		MenuInflater inflater = getActivity().getMenuInflater();
+		inflater.inflate(R.menu.lapitem, menu);
+	}
+	
+	
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+		
+		switch(item.getItemId()) {
+		case R.id.menu_deletelap:
+			this.mLapManager.DeleteLap(info.position);
+			mLapAdapter.notifyDataSetChanged();
+			updateRealElapseTime() ;
+			printTime();
+			return true;
+		default:
+			return super.onContextItemSelected(item);
+		}
+
+	}
 
 	@Override
 	public void onStart() {
@@ -294,7 +332,9 @@ CountdownWindow.CountdownListener,Bang
 
 	protected void changeState() {
 		if (_timekeeper.isrunning()) {
+			
 			_timekeeper.stop();
+			
 			
 		} else {
 			
@@ -378,6 +418,18 @@ CountdownWindow.CountdownListener,Bang
 				
 			}
 		}) ;
+	}
+	
+	/**
+	 * when stop recod, if have lap, then display the last lap total elapsed time on
+	 * digiter screen. 
+	 */
+	private void updateRealElapseTime() {
+		if (_timekeeper != null && _timekeeper.isrunning() == false) {
+			long rt = mLapManager.getTotalElapsedTime() ;
+			if (rt != 0)
+				_timekeeper.set_elapsedTime(rt) ;
+		}
 	}
 	
 	public void printTime() {

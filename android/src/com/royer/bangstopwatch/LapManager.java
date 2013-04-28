@@ -66,7 +66,33 @@ public class LapManager implements Parcelable {
 		
 		_laps.add(newlap);
 	}
+	
+	/**
+	 * delete a lap by position, it must adjust next lap value
+	 * add this during time to next lap during time 
+	 * @param position
+	 */
+	public void DeleteLap(int position) {
+		Lap thelap = _laps.get(position);
+		if (position < (_laps.size() - 1)) {
+			Lap nextlap = _laps.get(position + 1) ;
+			nextlap.set_laptime(nextlap.get_laptime() + thelap.get_laptime());
+		}
+		
+		_laps.remove(position);
+	}
 
+	
+	public long getTotalElapsedTime() {
+		
+		long t = 0;
+		
+		if (_laps.size() > 0) {
+			t = _laps.get(_laps.size() - 1).get_abstime();
+		}
+		return t;
+	}
+	
 	@Override
 	public int describeContents() {
 		return 0;

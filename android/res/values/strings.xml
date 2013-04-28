@@ -15,6 +15,7 @@
     <string name="strInCalling">can not start durring a calling...</string>
     <string name="strNoRecorder">This device does not support record voice.</string>
     <string name="strCancel">Cancel</string>
+    <string name="delete">Delete</string>
 
 
 </resources>
