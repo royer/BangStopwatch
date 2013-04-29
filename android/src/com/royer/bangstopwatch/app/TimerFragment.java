@@ -219,11 +219,14 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 	}
 	
 	private void toStartPractice() {
-		//TODO to Start Practice ;
+		
+		setStatus(Status.RUNNING);
+		mTimeBoard.stopBlink();
 	}
 	
 	private void toCalcelPractice() {
-		//TODO to Cancel Practice ;
+		
+		setStatus(Status.NORMAL);
 	}
 	
 	private void updateStartButtonStatus() {
@@ -264,7 +267,7 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		private ImageView[]	iv = new ImageView[6];
 		
 		
-		private Timer	  timerForBlink = new Timer();
+		private Timer	  timerForBlink = null;
 		
 		public TimeBoard() {
 			whichinsetting = TBPosition.NONE;
@@ -452,6 +455,7 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		public void startBlink() {
 			
 			Blink(false);
+			timerForBlink = new Timer();
 			
 			TimerTask	ttforDisappear = new TimerTask() {
 
@@ -489,6 +493,28 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 				
 			};
 			timerForBlink.scheduleAtFixedRate(ttforAppear, 300, 1000);
+		}
+	
+		public void stopBlink() {
+			timerForBlink.cancel() ;
+			timerForBlink = null ;
+			
+			switch(whichinsetting) {
+			case HOURS:
+				iv[0].setVisibility(View.VISIBLE);
+				iv[1].setVisibility(View.VISIBLE);
+				break;
+			case MINUTES:
+				iv[2].setVisibility(View.VISIBLE);
+				iv[3].setVisibility(View.VISIBLE);
+				break;
+			case SECONDS:
+				iv[4].setVisibility(View.VISIBLE);
+				iv[5].setVisibility(View.VISIBLE);
+				break;
+			}
+			
+			setCurrentPosition(TBPosition.NONE);
 		}
 	}
 	
