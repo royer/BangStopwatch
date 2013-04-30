@@ -41,24 +41,24 @@ import android.media.AudioRecord;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.support.v4.app.DialogFragment;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class StopwatchFragment extends SherlockFragment implements SaveRestoreMyData ,
-CountdownWindow.CountdownListener,Bang
+public class StopwatchFragment extends SherlockFragment implements
+CountdownDialog.NotifyCountdownListener,
+Bang
 {
 
 	public static final String TAG = "StopwatchFragment" ;
@@ -109,7 +109,6 @@ CountdownWindow.CountdownListener,Bang
 	private LapManager		mLapManager = null ;
 	private ListView		mLapList ;
 	
-	CountdownWindow	wndCountdown ;
 	
 	RecordService	mService ;
 	boolean			mBound = false;
@@ -132,9 +131,6 @@ CountdownWindow.CountdownListener,Bang
 		mLapList = (ListView)getView().findViewById(R.id.listLap);
 		this.registerForContextMenu(mLapList);
 		
-		//TODO bad design to new class in onActivityCreated, because if re attach ,the fragment still exist,
-		if (wndCountdown == null )
-			wndCountdown = new CountdownWindow(getActivity(),this);
 		
 		
 		btnStart = (Button)getView().findViewById(R.id.btnStart);
@@ -163,7 +159,9 @@ CountdownWindow.CountdownListener,Bang
 					}
 
 					state = STATE_COUNTDOWN;
-					wndCountdown.Start(getActivity().findViewById(R.id.main), 5);
+					DialogFragment newFragment = CountdownDialog.NewInstance(5,getTag());
+					newFragment.show(getFragmentManager(), "countdownDialog");
+					
 					
 					
 				} else {
@@ -186,31 +184,13 @@ CountdownWindow.CountdownListener,Bang
 		});
 		
 		if (savedInstanceState != null) {
+			
 			Log.d(TAG, "savedInstanceState " + savedInstanceState.toString());
 			_timekeeper = savedInstanceState.getParcelable(STATE_TIMEKEEPER);
 			mLapManager = savedInstanceState.getParcelable(STATE_LAPS);
 			state = savedInstanceState.getInt(STATE_STATE);
 			mBound = savedInstanceState.getBoolean(STATE_BOUNDING);
 			((MainActivity)getActivity()).EnableTab(1, state == STATE_NONE);
-			
-			wndCountdown.readFromBundle(savedInstanceState) ;
-			
-			
-			if (wndCountdown.isRunning()) {
-				// popupwindow cann't show before Activity window has been displayed.
-				// must use post method until all necessary start up life cycle methods get completed.
-				getActivity().findViewById(R.id.main).post(new Runnable() {
-
-					@Override
-					public void run() {
-						
-						wndCountdown.restart(getActivity().findViewById(R.id.main));
-						
-					}
-					
-				});
-			}
-			
 
 		} else {
 			Log.d(TAG,"savedInstanceState == NULL") ;
@@ -243,8 +223,10 @@ CountdownWindow.CountdownListener,Bang
 			ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
 		
-		MenuInflater inflater = getActivity().getMenuInflater();
-		inflater.inflate(R.menu.lapitem, menu);
+		if (state == STATE_NONE) {
+			MenuInflater inflater = getActivity().getMenuInflater();
+			inflater.inflate(R.menu.lapitem, menu);
+		}
 	}
 	
 	
@@ -310,7 +292,6 @@ CountdownWindow.CountdownListener,Bang
 	public void onDestroy() {
 		Log.d(TAG, "onDestroy()...");
 		stopTimerTask();
-		wndCountdown.cancel();
 		super.onDestroy();
 	}
 
@@ -326,7 +307,6 @@ CountdownWindow.CountdownListener,Bang
 		outState.putParcelable(STATE_LAPS, mLapManager);
 		outState.putInt(STATE_STATE, state);
 		outState.putBoolean(STATE_BOUNDING, mBound);
-		wndCountdown.writeToBundle(outState);
 		
 	}
 
@@ -459,37 +439,28 @@ CountdownWindow.CountdownListener,Bang
 				res_img_smallDigits[(int)(time /10 % 10 )]);
 	}
 
-	@Override
-	public void onSaveMyData(Bundle onSavedInstance) {
-		/*
-		Log.d(TAG, "onSaveMyData") ;
-		if (_timekeeper != null)
-			onSavedInstance.putParcelable(STATE_TIMEKEEPER, _timekeeper);
-		//onSavedInstance.putParcelable(STATE_COUNTDOWNWND, wndCountdown);
-		if (wndCountdown != null)
-			wndCountdown.writeToBundle(onSavedInstance);
-		*/
-	}
+
+
 
 	@Override
-	public void OnRestoreMyData(Bundle onSavedInstance) {
-		/*
-		Log.d(TAG, "onRestoreMyData") ;
-		_timekeeper = onSavedInstance.getParcelable(STATE_TIMEKEEPER);
-		wndCountdown.readFromBundle(onSavedInstance);
-		*/
-	}
-
-	@Override
-	public void OnCountdownFinished() {
-		state = STATE_RUNNING;
-		changeState();
+	public void onCountdownDismiss(boolean done) {
 		
-		// bind RecordService
-		Intent intent = new Intent(getActivity(), RecordService.class);
-		getActivity().startService(intent);
-		getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		if (done == true) {
+			
+			state = STATE_RUNNING;
+			changeState();
+			
+			// bind RecordService
+			Intent intent = new Intent(getActivity(), RecordService.class);
+			getActivity().startService(intent);
+			getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+			
+		} else {
+			state = STATE_NONE ;
+		}
+		
 	}
+	
 
 	public void onAppWillQuit() {
 		if (state == STATE_RUNNING) {
@@ -543,5 +514,6 @@ CountdownWindow.CountdownListener,Bang
 		}
 		
 	} ;
+
 
 }

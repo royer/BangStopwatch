@@ -6,8 +6,11 @@ import java.util.TimerTask;
 import com.actionbarsherlock.app.SherlockFragment;
 import com.royer.bangstopwatch.*;
 
-import android.app.Activity;
+import android.support.v4.app.DialogFragment;
+import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +19,26 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class TimerFragment extends SherlockFragment implements SaveRestoreMyData {
+//TODO change to use Handler to control timer thread with UI thread, not use post ;
+
+public class TimerFragment extends SherlockFragment implements 
+CountdownDialog.NotifyCountdownListener {
+	
+	public static final String TAG = "TimerFragment" ;
+	
+	public static final String STATE_HAVINGCOUNTDOWN = 
+			"royer.bangstopwatch.timer.havingcountdown";
+	public static final String STATE_STATUS = 
+			"royer.bangstopwatch.timer.status" ;
+	public static final String STATE_STARTTIME = 
+			"royer.bangstopwatch.timer.starttime";
+	
+	public static final String STATE_TBPOSITION = 
+			"royer.bangstopwatch.timer.tbposition";
+	public static final String STATE_SETTINGVAL = 
+			"royer.bangstopwatch.timer.settingval";
+	public static final String STATE_CURRENTVAL = 
+			"royer.bangstopwatch.timer.currentval";
 	
 	public enum Status {
 		NORMAL, SETTING, STARTING, RUNNING
@@ -40,10 +62,19 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 	
 	TimeBoard 	mTimeBoard = new TimeBoard();
 	
+	long		lStartTime = 0;
+	Timer		countdownTimer = null ;
+	
+	
+	
+	MediaPlayer	mediaplayer = null ;
+	
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		Log.d(TAG,"OnCreate") ;
 	}
 	
 	
@@ -59,10 +90,22 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		setTimeBoardImgListener();
 		
 		
-		
+		if (savedInstanceState != null) {
+			mStatus = Status.values()[savedInstanceState.getInt(STATE_STATUS)];
+			lStartTime = savedInstanceState.getLong(STATE_STARTTIME);
+			mTimeBoard.restoreState(savedInstanceState);
+			
+			
+			if (mStatus == Status.RUNNING) {
+				startOrResumeCountdownTimer() ;
+			}
+
+		}
 		
 		updateStartButtonStatus();
 		mTimeBoard.updateBoard();
+		
+		
 	}
 
 
@@ -73,16 +116,41 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		
 		return inflater.inflate(R.layout.timer, container, false);
 	}
+	
+	
 
 	@Override
-	public void onSaveMyData(Bundle onSavedInstance) {
-		// TODO Auto-generated method stub
+	public void onStart() {
+		super.onStart();
+		
+		if (mStatus == Status.SETTING) {
+			mTimeBoard.startBlink() ;
+		}
+	}
+
+
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		
+		outState.putInt(STATE_STATUS, mStatus.ordinal()) ;
+		outState.putLong(STATE_STARTTIME, lStartTime);
+		mTimeBoard.saveState(outState);
+	
 		
 	}
 
+
+
 	@Override
-	public void OnRestoreMyData(Bundle onSavedInstance) {
+	public void onDestroy() {
+		super.onDestroy();
+		
 	}
+
+
+
 	
 	private void setInputButtonsListener() {
 
@@ -210,7 +278,7 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		
 		if ((mStatus == Status.NORMAL || mStatus == Status.SETTING) && 
 				mTimeBoard.getSettingValue() > 0) {
-			toStartPractice();
+			prepareStart();
 		} else if (mStatus == Status.RUNNING) {
 			toCalcelPractice();
 		}
@@ -218,21 +286,133 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		updateStartButtonStatus();
 	}
 	
+	private void prepareStart() {
+		
+		setStatus(Status.STARTING) ;
+		
+		mTimeBoard.stopBlink();
+		
+		
+		DialogFragment newFragment = CountdownDialog.NewInstance(5,this.getTag());
+		newFragment.show(getFragmentManager(), "countdownDialog");
+
+	}
+	
 	private void toStartPractice() {
 		
 		setStatus(Status.RUNNING);
-		mTimeBoard.stopBlink();
+		
+		lStartTime = SystemClock.elapsedRealtime();
+		
+		startOrResumeCountdownTimer();
+		
+	}
+	
+	private void startOrResumeCountdownTimer() {
+		if (countdownTimer == null) {
+			countdownTimer = new Timer();
+			
+			mTimeBoard.startCountdown() ;
+			
+			TimerTask	tt = new TimerTask(){
+
+				@Override
+				public void run() {
+					
+					long elaspedtime = SystemClock.elapsedRealtime() - lStartTime ;
+					if (elaspedtime >= ((long)mTimeBoard.getSettingValue() * 1000) ) {
+						getActivity().runOnUiThread(new Runnable(){
+
+							@Override
+							public void run() {
+								onTimerFinished();
+							}
+							
+						});
+					} else {
+						int old = mTimeBoard.getCountdownVal() ;
+						int left = (int)((float)(mTimeBoard.getSettingValue() * 1000 - elaspedtime ) / 1000.0 + 0.5);
+						if (left != old) {
+							mTimeBoard.setCountdownVal(left) ;
+							getActivity().runOnUiThread(new Runnable(){
+
+								@Override
+								public void run() {
+									mTimeBoard.updateBoard() ;
+								}
+								
+							});
+						}
+					}
+				}
+				
+			} ;
+			
+			countdownTimer.scheduleAtFixedRate(tt, 0, 100);
+		}
 	}
 	
 	private void toCalcelPractice() {
 		
 		setStatus(Status.NORMAL);
 	}
+
+	@Override
+	public void onCountdownDismiss(boolean done) {
+		if (done == true) {
+			toStartPractice();
+			updateStartButtonStatus() ;
+		} else {
+			mStatus = Status.NORMAL ;
+		}
+	}
+	
+	public void onTimerFinished() {
+
+		setStatus(Status.NORMAL) ;
+		
+		if (countdownTimer != null) {
+			countdownTimer.cancel() ;
+			countdownTimer.purge() ;
+			countdownTimer = null ;
+		}
+		
+		if (mediaplayer == null) {
+			
+			mediaplayer = MediaPlayer.create(getActivity(), R.raw.countdownend);
+			mediaplayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+				
+				@Override
+				public void onCompletion(MediaPlayer mp) {
+					mp.release();
+					if (mp == mediaplayer) {
+						mediaplayer = null ;
+					}
+				}
+			});
+			
+			mediaplayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+				
+				@Override
+				public boolean onError(MediaPlayer mp, int what, int extra) {
+					mp.reset();
+					return false;
+				}
+			});
+			
+			mediaplayer.start();
+			
+		}
+		
+		updateStartButtonStatus() ;
+		
+		mTimeBoard.updateBoard() ;
+	}
 	
 	private void updateStartButtonStatus() {
 		Button	btn = (Button)getView().findViewById(R.id.btnStart);
 		
-		if (mStatus == Status.NORMAL || mStatus == Status.SETTING) {
+		if (mStatus == Status.NORMAL || mStatus == Status.SETTING || mStatus == Status.STARTING) {
 			btn.setText(R.string.start);
 		} else {
 			btn.setText(R.string.stop);
@@ -253,9 +433,14 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		TBPosition	whichinsetting ;
 		
 		/**
-		 *  the timer (second)
+		 *  the setting count down time (second)
 		 */
-		private int			mSettingVal;	
+		private int			mSettingVal;
+		
+		/**
+		 * current count down (second)
+		 */
+		private int			mCountdownVal ;
 		
 		private int[] res_img_Digits = { 
 				R.drawable.digitaldigit0, R.drawable.digitaldigit1, 
@@ -287,20 +472,44 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 			}
 		}
 		
-		int getSettingValue() {
+		public void saveState(Bundle outState) {
+			outState.putInt(STATE_SETTINGVAL,mSettingVal);
+			outState.putInt(STATE_CURRENTVAL, mCountdownVal);
+			outState.putInt(STATE_TBPOSITION, whichinsetting.ordinal());
+		}
+		
+		public void restoreState(Bundle savedState) {
+			mSettingVal = savedState.getInt(STATE_SETTINGVAL);
+			mCountdownVal = savedState.getInt(STATE_CURRENTVAL);
+			whichinsetting = TBPosition.values()[savedState.getInt(STATE_TBPOSITION)] ;
+		}
+		
+		public int getSettingValue() {
 			return mSettingVal ;
 		}
 		
-		int getSetHours() {
-			return mSettingVal / 3600 ;
+		public int getSetHours() {
+			return getHour(mSettingVal) ;
 		}
 		
-		int getSetMinutes() {
-			return ( mSettingVal % 3600 ) / 60 ;
+		public int getSetMinutes() {
+			return getMinute( mSettingVal );
 		}
 		
-		int getSetSeconds() {
-			return ( mSettingVal % 60 );
+		public int getSetSeconds() {
+			return getSecond( mSettingVal );
+		}
+		
+		public int getCountdownVal() {
+			return mCountdownVal ;
+		}
+		
+		public void setCountdownVal(int val) {
+			mCountdownVal = val ;
+		}
+		
+		public void startCountdown() {
+			mCountdownVal = mSettingVal ;
 		}
 		
 		public TBPosition getCurrentPosition() {
@@ -318,7 +527,7 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 				// update TimeBoard to display the setting value
 				val = mSettingVal ;
 			} else {
-				//TODO update TimeBoard to display left times not the setting value
+				val = mCountdownVal ;
 			}
 			iv[0].setImageResource(res_img_Digits[val/36000]);
 			iv[1].setImageResource(res_img_Digits[(val/3600) % 10]);
@@ -454,6 +663,9 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		
 		public void startBlink() {
 			
+			if (timerForBlink != null)
+				return ;
+			
 			Blink(false);
 			timerForBlink = new Timer();
 			
@@ -496,8 +708,10 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 		}
 	
 		public void stopBlink() {
-			timerForBlink.cancel() ;
-			timerForBlink = null ;
+			if (timerForBlink != null) {
+				timerForBlink.cancel() ;
+				timerForBlink = null ;
+			}
 			
 			switch(whichinsetting) {
 			case HOURS:
@@ -517,5 +731,19 @@ public class TimerFragment extends SherlockFragment implements SaveRestoreMyData
 			setCurrentPosition(TBPosition.NONE);
 		}
 	}
+	
+	static int getHour(int seconds) {
+		return seconds / 3600 ;
+	}
+	static int getMinute(int seconds) {
+		return ( seconds % 3600 ) / 60 ;
+	}
+	static int getSecond(int seconds) {
+		return ( seconds % 60 );
+	}
+
+
+
+	
 	
 }
