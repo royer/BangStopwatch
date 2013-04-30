@@ -16,6 +16,7 @@
     <string name="strNoRecorder">This device does not support record voice.</string>
     <string name="strCancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="firstselectpart">Please select a part(hours/Minutes/Seconds) which you want edit.</string>
 
 
 </resources>

@@ -7,6 +7,7 @@ import com.actionbarsherlock.app.SherlockFragment;
 import com.royer.bangstopwatch.*;
 
 import android.support.v4.app.DialogFragment;
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -19,13 +20,13 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-//TODO change to use Handler to control timer thread with UI thread, not use post ;
 
 public class TimerFragment extends SherlockFragment implements 
 CountdownDialog.NotifyCountdownListener {
 	
 	public static final String TAG = "TimerFragment" ;
-	
+	public static final String PREF_SETTINGVAL = "PracticeTime"
+	;
 	public static final String STATE_HAVINGCOUNTDOWN = 
 			"royer.bangstopwatch.timer.havingcountdown";
 	public static final String STATE_STATUS = 
@@ -63,6 +64,7 @@ CountdownDialog.NotifyCountdownListener {
 	TimeBoard 	mTimeBoard = new TimeBoard();
 	
 	long		lStartTime = 0;
+	
 	Timer		countdownTimer = null ;
 	
 	
@@ -100,6 +102,9 @@ CountdownDialog.NotifyCountdownListener {
 				startOrResumeCountdownTimer() ;
 			}
 
+		} else {
+			SharedPreferences settings = getActivity().getPreferences(0);
+			mTimeBoard.mSettingVal = settings.getInt(PREF_SETTINGVAL, 5) ;
 		}
 		
 		updateStartButtonStatus();
@@ -131,6 +136,18 @@ CountdownDialog.NotifyCountdownListener {
 
 
 	@Override
+	public void onStop() {
+		super.onStop();
+		
+		SharedPreferences settings = getActivity().getPreferences(0);
+		SharedPreferences.Editor e = settings.edit();
+		e.putInt(PREF_SETTINGVAL, mTimeBoard.getSettingValue()) ;
+		e.commit() ;
+	}
+
+
+
+	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		
@@ -147,6 +164,15 @@ CountdownDialog.NotifyCountdownListener {
 	public void onDestroy() {
 		super.onDestroy();
 		
+		if (this.countdownTimer != null) {
+			countdownTimer.cancel() ;
+			countdownTimer.purge();
+			countdownTimer = null ;
+		}
+		
+		if (mStatus == Status.SETTING) {
+			mTimeBoard.stopBlinkTimerThread() ;
+		}
 	}
 
 
@@ -229,6 +255,8 @@ CountdownDialog.NotifyCountdownListener {
 			return ;
 		
 		if (mTimeBoard.getCurrentPosition() == TBPosition.NONE) {
+			String	s = getActivity().getString(R.string.firstselectpart);
+			Toast.makeText(getActivity(), s, 8).show();
 			return ;
 		}
 		int number = -1;
@@ -326,6 +354,7 @@ CountdownDialog.NotifyCountdownListener {
 							@Override
 							public void run() {
 								onTimerFinished();
+								return ;
 							}
 							
 						});
@@ -706,13 +735,17 @@ CountdownDialog.NotifyCountdownListener {
 			};
 			timerForBlink.scheduleAtFixedRate(ttforAppear, 300, 1000);
 		}
-	
-		public void stopBlink() {
+		
+		public void stopBlinkTimerThread() {
 			if (timerForBlink != null) {
 				timerForBlink.cancel() ;
 				timerForBlink = null ;
 			}
 			
+		}
+	
+		public void stopBlink() {
+			stopBlinkTimerThread();
 			switch(whichinsetting) {
 			case HOURS:
 				iv[0].setVisibility(View.VISIBLE);
