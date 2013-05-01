@@ -73,10 +73,10 @@ public class MainActivity extends SherlockFragmentActivity {
         mTabHost.setup();
         
         mTabManager = new TabManager(this, mTabHost, R.id.realtabcontent);
-        mTabManager.addTab(mTabHost.newTabSpec("Recorder").setIndicator(getResources().getString(R.string.Recorder)), 
-        		StopwatchFragment.class, null) ;
-        mTabManager.addTab(mTabHost.newTabSpec("Practice").setIndicator(getResources().getString(R.string.Practice)), 
-        		TimerFragment.class, null);
+        mTabManager.addTab(mTabHost.newTabSpec("Recorder").setIndicator(getResources().getString(R.string.Recorder),
+        		getResources().getDrawable(R.drawable.stopwatch)),StopwatchFragment.class, null) ;
+        mTabManager.addTab(mTabHost.newTabSpec("Practice").setIndicator(getResources().getString(R.string.Practice),
+        		getResources().getDrawable(R.drawable.practice)),TimerFragment.class, null);
         
         Log.d(TAG,"onCreate") ;
         
