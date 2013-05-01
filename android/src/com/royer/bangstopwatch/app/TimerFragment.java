@@ -131,6 +131,10 @@ CountdownDialog.NotifyCountdownListener {
 		if (mStatus == Status.SETTING) {
 			mTimeBoard.startBlink() ;
 		}
+		if (mStatus == Status.RUNNING) {
+			MainActivity activity = (MainActivity)getActivity();
+			activity.EnableTab(0, false);
+		}
 	}
 
 
@@ -332,6 +336,8 @@ CountdownDialog.NotifyCountdownListener {
 		
 		lStartTime = SystemClock.elapsedRealtime();
 		
+		((MainActivity)getActivity()).EnableTab(0, false);
+		
 		startOrResumeCountdownTimer();
 		
 	}
@@ -384,6 +390,14 @@ CountdownDialog.NotifyCountdownListener {
 	private void toCalcelPractice() {
 		
 		setStatus(Status.NORMAL);
+		if (this.countdownTimer != null) {
+			countdownTimer.cancel();
+			countdownTimer.purge();
+			countdownTimer = null ;
+		}
+		
+		((MainActivity)getActivity()).EnableTab(0, true);
+		
 	}
 
 	@Override
@@ -394,6 +408,8 @@ CountdownDialog.NotifyCountdownListener {
 		} else {
 			mStatus = Status.NORMAL ;
 		}
+		
+
 	}
 	
 	public void onTimerFinished() {
@@ -436,6 +452,9 @@ CountdownDialog.NotifyCountdownListener {
 		updateStartButtonStatus() ;
 		
 		mTimeBoard.updateBoard() ;
+		
+		((MainActivity)getActivity()).EnableTab(0, true);
+
 	}
 	
 	private void updateStartButtonStatus() {
